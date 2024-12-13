@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // Defino un handler para el home de la aplicacion.
@@ -14,7 +16,23 @@ func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello from Snippetbox"))
 }
 
+func snippetView(w http.ResponseWriter, r *http.Request) {
 
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id < 1 {
+		http.NotFound(w, r)
+		return
+	}
+
+	msg := fmt.Sprintf("Display a specific snippet with ID %d...", id)
+	w.Write([]byte(msg))
+
+
+}
+
+func snippetCreate(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Display a form for creating a new snippet..."))
+}
 // 
 func main() {
 
@@ -23,7 +41,10 @@ func main() {
 
 	// Le digo que para cualquier url que comience con "/", su handler es home
 	// ! OBS. Si pongo "/" lo toma como un comodin, si especifico algo mas ya solo matchea con esa URL.
-	mux.HandleFunc("/landing", home)
+	mux.HandleFunc("/{$}", home)
+	mux.HandleFunc("/snippet/view/{id}", snippetView)
+	mux.HandleFunc("/snippet/create", snippetCreate)
+
 
 	// Simplemente loggeo que se esta por iniciar el servidor en :4000
 	log.Print("Starting server on :4000")
