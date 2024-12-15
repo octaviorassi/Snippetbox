@@ -1,11 +1,18 @@
 package main
 
 import (
-	"log"
+	"flag"
+	"log/slog"
 	"net/http"
+	"os"
 )
 
 func main() {
+	addr := flag.String("addr", ":4000", "HTTP network address")
+	flag.Parse()
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ AddSource: true,}))
+
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 
@@ -20,8 +27,11 @@ func main() {
 
 	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
 
-	log.Print("Starting server on :4000")
-	err := http.ListenAndServe(":4000", mux)
+	logger.Info("Starting server", "addr", *addr)
+	err := http.ListenAndServe(*addr, mux)
 
-	log.Fatal(err)
+	// there is no equivalent to the log.Fatal() using slog, but we can log the error at the Error severity level
+	// and then prompt the system to exit with an abnormal termination status (1).
+	logger.Error(err.Error())
+	os.Exit(1)
 }

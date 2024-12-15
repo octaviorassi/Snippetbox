@@ -15,3 +15,8 @@ Note on the usage of http.ServeFile() function. This is useful when, rather than
 Something remarkable is that the signature for the ListenAndServe function we've been using actually takes a Handler as its second argument, and we have been passing a servemux instead. This is possible because servemux actually does implement a ServeHTTP method; in fact, we can think of a servemux just as a special kind of handler, which instead of responding to the requests, it passes the request to the appropriate handler. This is very common in Go, we will often chain handlers together.
 What actually goes on is that when our server receives an HTTP request, it calls the servemux's ServeHTTP method, which looks up the correct handler to call based on the request method and URL path, and in turn calls the handler's ServeHTTP method. 
 In that sense, a Go web application can be though of as a chain of ServeHTTP() methods being called one after another.
+
+
+Also note that HTTP requests in Go are server concurrently. While this makes Go fast, race conditions must be taken into account when the handlers access shared resources.
+
+Related to the previous point, slog is thread-safe. The same logger can be shared across multiple go routines without needing to worry about race conditions. However, if multiple loggers are put in place, it is important that if they share the writing destination then its Write() method must be thread-safe, too. To avoid forgetting a value after a key in a slog logging call, a pair key-value can be replaced with a single argument slog.Any(key, value). 'Any' can also be replaced by the type of the value for extra type-safety. 
