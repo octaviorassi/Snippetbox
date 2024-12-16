@@ -3,7 +3,6 @@ package main
 import (
 	"log/slog"
 	"net/http"
-	"runtime/debug"
 )
 
 /*	serverError writes a log entry at Error level describing the request's method and URI
@@ -13,10 +12,10 @@ func (app *application) serverError (w http.ResponseWriter, r *http.Request, err
 	var (
 		method = r.Method
 		uri    = r.URL.RequestURI()
-		trace  = string(debug.Stack())
+		// trace  = string(debug.Stack())
 	)
 
-	app.logger.Error(err.Error(), slog.Any("method", method), slog.Any("uri", uri), slog.Any("trace", trace))
+	app.logger.Error(err.Error(), slog.Any("method", method), slog.Any("uri", uri))
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
