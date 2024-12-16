@@ -8,10 +8,13 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+
+	"snippetbox.octaviorassi.net/internal/models"
 )
 
 type application struct {
 	logger *slog.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -35,7 +38,12 @@ func main() {
 	defer db.Close()
 
 	// Create the app and load the handlers into the mux
-	app := &application{ logger: logger, }
+	app := &application{
+		logger:	  logger,
+		snippets: &models.SnippetModel{ DB: db},
+	}
+
+
 	mux := app.routes()
 
 	// Start the server at the provided address with the defined handlers

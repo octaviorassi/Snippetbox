@@ -26,3 +26,7 @@ What can we do if we try to apply the DI pattern but the handlers are spread acr
 
 In that case, we can use the closure pattern. A closure is a function that references variables from its outer scope. We say that these variables are captured by the closure, meaning that they can be viewed and altered even after the outer function has returned.
 (check why this is needed and why the solution i mentioned above is not enough ??)
+
+
+Note on the usage of append to generate an slice from scratch in the Latest() method for SnippetModel. Slices are implemented as arrays with extra information like capacity and length. When we exceed the capacity, the array is realloacted with greater memory. It does not only allocate memory for one more element, but it actually duplicates the current capacity (in fact, the first increases will be x2 and at some point it starts progressively using a smaller ratio).
+A more efficient approach would probably be to create the slice with an initial size of say 5 or 10 (5 so it only reallocates one time at most). Nonetheless, append is still O(1) amortized and fast enough, so there is no reason to change it as of now.
