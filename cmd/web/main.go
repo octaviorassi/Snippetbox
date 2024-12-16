@@ -38,9 +38,20 @@ func main() {
 	defer db.Close()
 
 	// Create the app and load the handlers into the mux
+	snippetModel, err := models.NewSnippetModel(db)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
+	// Defer the closure of all the prepared statements
+	defer snippetModel.InsertStmt.Close()
+	defer snippetModel.GetStmt.Close()
+	defer snippetModel.LatestStmt.Close()
+
 	app := &application{
 		logger:	  logger,
-		snippets: &models.SnippetModel{ DB: db},
+		snippets: snippetModel,
 	}
 
 

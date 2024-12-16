@@ -30,3 +30,5 @@ In that case, we can use the closure pattern. A closure is a function that refer
 
 Note on the usage of append to generate an slice from scratch in the Latest() method for SnippetModel. Slices are implemented as arrays with extra information like capacity and length. When we exceed the capacity, the array is realloacted with greater memory. It does not only allocate memory for one more element, but it actually duplicates the current capacity (in fact, the first increases will be x2 and at some point it starts progressively using a smaller ratio).
 A more efficient approach would probably be to create the slice with an initial size of say 5 or 10 (5 so it only reallocates one time at most). Nonetheless, append is still O(1) amortized and fast enough, so there is no reason to change it as of now.
+
+The important of using the sql package from Go is that it decouples the actual database being used from the application; the theory is that the database itself can be swapped without rewriting most of the code, just driver-specific minor differences. The general code will not be different if MySQL or PostgreSQL is being used.

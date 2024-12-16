@@ -16,14 +16,40 @@ type Snippet struct {
 
 type SnippetModel struct {
 	DB *sql.DB
+	InsertStmt *sql.Stmt
+	GetStmt *sql.Stmt
+	LatestStmt *sql.Stmt
+}
+
+func NewSnippetModel(db *sql.DB) (*SnippetModel, error) {
+	insertStmt, err :=
+		db.Prepare(`INSERT INTO snippets (title, content, created, expires)
+			 		VALUES (?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`)
+	if err != nil { return nil, err }
+
+	getStmt, err :=
+		db.Prepare(`SELECT id, title, content, created, expires FROM snippets
+			 		WHERE expires > UTC_TIMESTAMP() AND id = ?`)
+	if err != nil { return nil, err }
+
+	latestStmt, err :=
+		db.Prepare(`SELECT id, title, content, created, expires FROM snippets
+					WHERE	expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`)		
+	if err != nil { return nil, err }
+		
+	model := &SnippetModel{
+		DB : db,
+		InsertStmt: insertStmt,
+		GetStmt: getStmt,
+		LatestStmt: latestStmt,
+	}
+
+	return model, nil
 }
 
 func (m *SnippetModel) Insert(title string, content string, expires int) (int, error) {
 
-	stmt := `INSERT INTO snippets (title, content, created, expires)
-			 VALUES (?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
-	
-	result, err := m.DB.Exec(stmt, title, content, expires)
+	result, err := m.InsertStmt.Exec(title, content, expires)
 	if err != nil { return 0, err }
 
 	id, err := result.LastInsertId()
@@ -36,11 +62,8 @@ func (m *SnippetModel) Insert(title string, content string, expires int) (int, e
 func (m *SnippetModel) Get(id int) (Snippet, error) {
 	
 	var s Snippet
-	stmt :=	`SELECT id, title, content, created, expires FROM snippets
-			 WHERE expires > UTC_TIMESTAMP() AND id = ?`
-
-	err := m.DB.QueryRow(stmt, id).
-				Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	err := m.GetStmt.QueryRow(id).
+					 Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
 
 	if err != nil {
 		// Check if the error is due to not finding any rows matching the ID
@@ -55,11 +78,9 @@ func (m *SnippetModel) Get(id int) (Snippet, error) {
 }
 
 func (m *SnippetModel) Latest() ([]Snippet, error) {
-	stmt := `SELECT id, title, content, created, expires FROM snippets
-			 WHERE	expires > UTC_TIMESTAMP() ORDER BY id DESC LIMIT 10`
 
+	rows, err := m.LatestStmt.Query()
 
-	rows, err := m.DB.Query(stmt)
 	if err != nil {
 		return nil, err
 	}
