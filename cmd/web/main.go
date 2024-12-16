@@ -1,37 +1,64 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log/slog"
 	"net/http"
 	"os"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func main() {
-	addr := flag.String("addr", ":4000", "HTTP network address")
-	flag.Parse()
+type application struct {
+	logger *slog.Logger
+}
 
+func main() {
+	// Define and parse the execution flags
+	addr := flag.String("addr", ":4000", "HTTP network address")
+	dsn	 := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
+
+	flag.Parse()
+	
+	// Create the app's logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{ AddSource: true,}))
 
-	mux := http.NewServeMux()
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	// Create the DB connection pool
+	db, err := openDB(*dsn)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 
-	mux.HandleFunc("GET /{$}", home)
-	mux.HandleFunc("GET /snippet/view/{id}", snippetView)
-	mux.HandleFunc("GET /snippet/create", snippetCreate)
+	// Closes the database when the surrounding function (i.e. main) finishes its execution
+	defer db.Close()
 
+	// Create the app and load the handlers into the mux
+	app := &application{ logger: logger, }
+	mux := app.routes()
 
-	// given an http.Handler, StripPrefix generates another one that serves the same purpose but removes the 
-	// given prefix from the request's path.
-	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
-
-	mux.HandleFunc("POST /snippet/create", snippetCreatePost)
-
+	// Start the server at the provided address with the defined handlers
 	logger.Info("Starting server", "addr", *addr)
-	err := http.ListenAndServe(*addr, mux)
+	err = http.ListenAndServe(*addr, mux)
 
-	// there is no equivalent to the log.Fatal() using slog, but we can log the error at the Error severity level
-	// and then prompt the system to exit with an abnormal termination status (1).
 	logger.Error(err.Error())
 	os.Exit(1)
+}
+
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Ping to test and establish a connection, since they are established lazily
+	err = db.Ping()
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	return db, nil
 }
