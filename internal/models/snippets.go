@@ -15,10 +15,10 @@ type Snippet struct {
 }
 
 type SnippetModel struct {
-	DB *sql.DB
-	InsertStmt *sql.Stmt
-	GetStmt *sql.Stmt
-	LatestStmt *sql.Stmt
+	DB 			*sql.DB
+	InsertStmt 	*sql.Stmt
+	GetStmt 	*sql.Stmt
+	LatestStmt 	*sql.Stmt
 }
 
 func NewSnippetModel(db *sql.DB) (*SnippetModel, error) {
