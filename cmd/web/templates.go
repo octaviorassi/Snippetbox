@@ -37,8 +37,8 @@ func newTemplateCache() (templateCache, error) {
 		
 		name := filepath.Base(page)
 
-		// Parse the base template to create a template set*
-		ts, err := template.ParseFiles("./ui/html/base.tmpl.html")
+		/* Load our template functions into a template set first and then parse the base template*/
+		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl.html")
 		if err != nil {
 			return nil, err
 		}
@@ -60,3 +60,11 @@ func newTemplateCache() (templateCache, error) {
 
 	return cache, nil
 }
+
+/*	Defines a format string for the representation of time.Time objects */
+func humanDate(t time.Time) string {
+	return t.Format("02 Jan 2006 at 15:04")
+}
+
+/*	Define a global map that matches strings to our template functions	*/
+var functions = template.FuncMap{ "humanDate": humanDate, }
