@@ -2,5 +2,33 @@
 
 {{define "main"}}
     <h2>Latest Snippets</h2>
+    
+    {{if .Snippets }}
+        {{template "displaySnippets" .}}
+    {{else}}
+        {{template "noSnippets" .}}
+    {{end}}
+{{end}}
+
+{{define "noSnippets"}}
     <p>There's nothing to see here yet!</p>
+{{end}}
+
+{{define "displaySnippets"}}
+    {{with .Snippets}}
+        <table>
+            <tr>
+                <th>Title</th>
+                <th>Created</th>
+                <th>ID</th>
+            </tr>
+            {{range .}}
+            <tr>
+                <td><a href='/snippet/view/{{.ID}}'>{{.Title}}</a></td>
+                <td>{{.Created}}</td>
+                <td>#{{.ID}}</td>
+            </tr>
+            {{end}}
+        </table>
+    {{end}}
 {{end}}
