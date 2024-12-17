@@ -15,6 +15,7 @@ import (
 type application struct {
 	logger *slog.Logger
 	snippets *models.SnippetModel
+	templateCache TemplateCache
 }
 
 func main() {
@@ -49,9 +50,17 @@ func main() {
 	defer snippetModel.GetStmt.Close()
 	defer snippetModel.LatestStmt.Close()
 
+	// Start the template cache
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := &application{
 		logger:	  logger,
 		snippets: snippetModel,
+		templateCache: templateCache,
 	}
 
 
