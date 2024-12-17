@@ -1,17 +1,30 @@
 package main
 
 import (
+	"net/http"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"snippetbox.octaviorassi.net/internal/models"
 )
 
-type TemplateCache = map[string]*template.Template
+
+type templateData struct {
+	Snippet	   	models.Snippet
+	Snippets 	[]models.Snippet
+	CurrentYear int
+}
+
+type templateCache = map[string]*template.Template
+
+func (app *application) newTemplateData(r *http.Request) templateData {
+	return templateData{ CurrentYear: time.Now().Year(), }
+}
 
 /*	newTemplateCache initializes the in-memory template cache, returning a map with
 	the page names as keys and their associated Template sets as values	*/
-func newTemplateCache() (TemplateCache, error) {
+func newTemplateCache() (templateCache, error) {
 	// Initialize an empty map that will act as a cache
 	cache := map[string]*template.Template{}
 
@@ -46,9 +59,4 @@ func newTemplateCache() (TemplateCache, error) {
 	}
 
 	return cache, nil
-}
-
-type templateData struct {
-	Snippet	   models.Snippet
-	Snippets []models.Snippet
 }

@@ -15,7 +15,7 @@ import (
 type application struct {
 	logger *slog.Logger
 	snippets *models.SnippetModel
-	templateCache TemplateCache
+	templateCache templateCache
 }
 
 func main() {
