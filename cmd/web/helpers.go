@@ -2,10 +2,39 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/go-playground/form/v4"
 )
+
+func (app *application) decodePostForm(r *http.Request, dst any) error {
+	// Parse the form
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	// Decode it into the destination
+	err = app.formDecoder.Decode(dst, r.PostForm)
+
+	// Check for the possible InvalidDecoderError
+	if err != nil {
+		// If the error generated is an InvalidDecoderError, panic
+		var InvalidDecoderError *form.InvalidDecoderError
+
+		if errors.As(err, &InvalidDecoderError) {
+			panic(err)
+		}
+
+		// Else, just return it
+		return err
+	}
+
+	return nil
+}
 
 func (app *application) render(w http.ResponseWriter, r *http.Request, status int, page string, data templateData) {
 	ts, ok := app.templateCache[page]

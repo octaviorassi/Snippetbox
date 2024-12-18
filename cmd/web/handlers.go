@@ -76,28 +76,24 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	
-	err := r.ParseForm()
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
-
-	// Decode the form into our variable form
+	// The decode method fills the form fields with their corresponding values from the HTML form
 	var form snippetCreateForm
 
-	// The decode method fills the form fields with their corresponding values from the HTML form
-	err = app.formDecoder.Decode(&form, r.PostForm)
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 	
 	// Validate the fields
-	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
-	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
-	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
-	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "This field must be equal to 1, 7, or 365")
+	form.CheckField(validator.NotBlank(form.Title), "title",
+					"This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title",
+					"This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content",
+					"This field cannot be blank")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires",
+					"This field must be equal to 1, 7, or 365")
 
 	// Check for any errors. If there are any, re-render the template highlighting them
 	if !form.Valid() {
