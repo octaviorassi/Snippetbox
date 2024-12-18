@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"log/slog"
@@ -83,6 +84,11 @@ func main() {
 
 	mux := app.routes()
 
+	// Initialize a tlsConfig for non-default TLS settings
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+	
 	// Initialize a new http.Server struct
 	srv := &http.Server{
 		Addr: 	 *addr,
@@ -90,6 +96,10 @@ func main() {
 		// ErrorLog acts as a bridge between the old logger used by http and our applications
 		// new structured logger. The http server logs are now written to our logger at Error level.
 		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+		TLSConfig: tlsConfig,
+		IdleTimeout: time.Minute,
+		ReadTimeout: 5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 	
 	logger.Info("Starting server", "addr", *addr)
