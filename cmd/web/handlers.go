@@ -14,7 +14,6 @@ import (
 // defined it we did not specify which methods it should implement, instead we can directly implement them.
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Server", "Go")
 
 	snippets, err := app.snippets.Latest()
 	if err != nil {
