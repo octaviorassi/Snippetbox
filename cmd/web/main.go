@@ -6,7 +6,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 
@@ -18,6 +21,7 @@ type application struct {
 	snippets 		*models.SnippetModel
 	templateCache 	templateCache
 	formDecoder		*form.Decoder
+	sessionManager  *scs.SessionManager
 }
 
 func main() {
@@ -40,7 +44,7 @@ func main() {
 	// Closes the database when the surrounding function (i.e. main) finishes its execution
 	defer db.Close()
 
-	// Create the app and load the handlers into the mux
+	// Create the snippetModel based on db
 	snippetModel, err := models.NewSnippetModel(db)
 	if err != nil {
 		logger.Error(err.Error())
@@ -62,11 +66,17 @@ func main() {
 	// Initialize a decoder instance
 	formDecoder := form.NewDecoder()
 
+	// Initialize a new session manager and set it up to work on our MySQL db
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+
 	app := &application{
 		logger:	  		logger,
 		snippets: 		snippetModel,
 		templateCache: 	templateCache,
 		formDecoder: 	formDecoder,
+		sessionManager: sessionManager,
 	}
 
 
