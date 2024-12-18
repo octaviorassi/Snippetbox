@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
 )
@@ -45,6 +46,23 @@ func (app *application) logRequest(next http.Handler) http.Handler {
 													slog.Any("ip", r.RemoteAddr),
 													slog.Any("proto", r.Proto),
 													slog.Any("uri", r.URL.RequestURI()))
+
+				next.ServeHTTP(w, r)
+			})
+}
+
+func (app *application) panicRecover(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				defer func() {
+					if err := recover(); err != nil {
+						// Trigger Go's HTTP server to close this connection and informs the user
+						w.Header().Set("Connection", "close")
+
+						// Generate a proper Interval Server Error response
+						app.serverError(w, r, fmt.Errorf("%s", err))
+					}
+				}()
 
 				next.ServeHTTP(w, r)
 			})
