@@ -18,10 +18,6 @@ type snippetCreateForm struct {
 	validator.Validator	`form:"-"`
 }
 
-// After implementing the application struct, instead of writing functions as standalone functions, we
-// define them as the methods of the application class. Note that struct is not an interface, when we
-// defined it we did not specify which methods it should implement, instead we can directly implement them.
-
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	snippets, err := app.snippets.Latest()
@@ -58,7 +54,7 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
-
+	
 	app.render(w, r, http.StatusOK, "view.tmpl.html", data)
 
 }
@@ -109,6 +105,9 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		app.serverError(w, r, err)
 		return
 	}
+
+	// Add the flash message to the session data
+	app.sessionManager.Put(r.Context(), "flash", "Snippet sucessfully created!")
 
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 
