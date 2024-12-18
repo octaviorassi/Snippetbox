@@ -14,6 +14,7 @@ type templateData struct {
 	Snippet	   	models.Snippet
 	Snippets 	[]models.Snippet
 	CurrentYear int
+	Form 		any
 }
 
 type templateCache = map[string]*template.Template
