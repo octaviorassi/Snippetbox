@@ -56,7 +56,7 @@ func (app *application) panicRecover(next http.Handler) http.Handler {
 			func(w http.ResponseWriter, r *http.Request) {
 				defer func() {
 					if err := recover(); err != nil {
-						// Trigger Go's HTTP server to close this connection and informs the user
+						// Trigger Go's HTTP server to close this connection and inform the user
 						w.Header().Set("Connection", "close")
 
 						// Generate a proper Interval Server Error response
