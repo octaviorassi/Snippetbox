@@ -70,6 +70,7 @@ func main() {
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
 
 	app := &application{
 		logger:	  		logger,
@@ -82,9 +83,18 @@ func main() {
 
 	mux := app.routes()
 
-	// Start the server at the provided address with the defined handlers
+	// Initialize a new http.Server struct
+	srv := &http.Server{
+		Addr: 	 *addr,
+		Handler: mux,
+		// ErrorLog acts as a bridge between the old logger used by http and our applications
+		// new structured logger. The http server logs are now written to our logger at Error level.
+		ErrorLog: slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	}
+	
 	logger.Info("Starting server", "addr", *addr)
-	err = http.ListenAndServe(*addr, mux)
+
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 
 	logger.Error(err.Error())
 	os.Exit(1)
