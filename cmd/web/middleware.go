@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log/slog"
 	"net/http"
 )
 
@@ -32,6 +33,18 @@ func commonHeaders(next http.Handler) http.Handler {
 				w.Header().Set(HeaderXFrameOptions, XFrameOptionsValue)
 				w.Header().Set(HeaderXXSSProtection, XXSSProtectionValue)
 				w.Header().Set(HeaderServer, Go)
+
+				next.ServeHTTP(w, r)
+			})
+}
+
+func (app *application) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				app.logger.Info("Request received", slog.Any("method", r.Method),
+													slog.Any("ip", r.RemoteAddr),
+													slog.Any("proto", r.Proto),
+													slog.Any("uri", r.URL.RequestURI()))
 
 				next.ServeHTTP(w, r)
 			})
