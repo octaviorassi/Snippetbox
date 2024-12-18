@@ -32,3 +32,6 @@ Note on the usage of append to generate an slice from scratch in the Latest() me
 A more efficient approach would probably be to create the slice with an initial size of say 5 or 10 (5 so it only reallocates one time at most). Nonetheless, append is still O(1) amortized and fast enough, so there is no reason to change it as of now.
 
 The importance of using the sql package from Go is that it decouples the actual database being used from the application; the theory is that the database itself can be swapped without rewriting most of the code, just driver-specific minor differences. The general code will not be different if MySQL or PostgreSQL is being used.
+
+SHORTCUTS:
+Ctrl + Shift + I to auto-indent HTML code
