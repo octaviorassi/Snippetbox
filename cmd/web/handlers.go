@@ -12,10 +12,10 @@ import (
 
 // The struct's fields must be exported in order to be read by the html/template package
 type snippetCreateForm struct {
-	Title		string
-	Content		string
-	Expires		int
-	validator.Validator
+	Title		string	`form:"title"`
+	Content		string	`form:"content"`
+	Expires		int		`form:"expires"`
+	validator.Validator	`form:"-"`
 }
 
 // After implementing the application struct, instead of writing functions as standalone functions, we
@@ -83,22 +83,16 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	title 	:= r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
+	// Decode the form into our variable form
+	var form snippetCreateForm
 
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// The decode method fills the form fields with their corresponding values from the HTML form
+	err = app.formDecoder.Decode(&form, r.PostForm)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-
-	// Initializes a map for error storage
-	form := snippetCreateForm{
-		Title: 		 title,
-		Content: 	 content,
-		Expires: 	 expires,
-	}
-
+	
 	// Validate the fields
 	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")

@@ -7,15 +7,17 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 
 	"snippetbox.octaviorassi.net/internal/models"
 )
 
 type application struct {
-	logger *slog.Logger
-	snippets *models.SnippetModel
-	templateCache templateCache
+	logger 			*slog.Logger
+	snippets 		*models.SnippetModel
+	templateCache 	templateCache
+	formDecoder		*form.Decoder
 }
 
 func main() {
@@ -57,10 +59,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize a decoder instance
+	formDecoder := form.NewDecoder()
+
 	app := &application{
-		logger:	  logger,
-		snippets: snippetModel,
-		templateCache: templateCache,
+		logger:	  		logger,
+		snippets: 		snippetModel,
+		templateCache: 	templateCache,
+		formDecoder: 	formDecoder,
 	}
 
 
