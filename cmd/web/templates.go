@@ -15,12 +15,18 @@ type templateData struct {
 	Snippets 	[]models.Snippet
 	CurrentYear int
 	Form 		any
+	Flash		string
 }
 
 type templateCache = map[string]*template.Template
 
+/*	newTemplateData returns an initialized templateData object with CurrentYear set
+	to the current year and Flash set to the request's flash value, if it exists	*/
 func (app *application) newTemplateData(r *http.Request) templateData {
-	return templateData{ CurrentYear: time.Now().Year(), }
+	return	templateData{
+				CurrentYear: time.Now().Year(),
+				Flash:		  app.sessionManager.PopString(r.Context(), "flash"),
+			}
 }
 
 /*	newTemplateCache initializes the in-memory template cache, returning a map with
