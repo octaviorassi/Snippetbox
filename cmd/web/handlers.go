@@ -77,14 +77,12 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) userSignup(w http.ResponseWriter, r *http.Request) {
-	/* renders the page and the form */
 	data := app.newTemplateData(r)
 	data.Form = userSignUpForm{}
 	app.render(w, r, http.StatusOK, "signup.tmpl.html", data)
 }
 
 func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
-	/* parses the form and inserts into the database */
 
 	var form userSignUpForm
 
@@ -112,7 +110,7 @@ func (app *application) userSignupPost(w http.ResponseWriter, r *http.Request) {
 	id, err := app.users.Insert(form.Name, form.Email, form.Password)
 	if err != nil {
 
-		if errors.As(err, models.ErrDuplicateEmail) {
+		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.AddFieldError("email", "Email address already in use")
 
 			data := app.newTemplateData(r) 
@@ -139,15 +137,66 @@ func (app *application) userLogIn(w http.ResponseWriter, r *http.Request) {
 	/* renders the page and the form */
 	data 	  := app.newTemplateData(r)
 	data.Form  = userLoginForm{}
-
-	// app.render(...)
-	return
+	app.render(w, r, http.StatusOK, "login.tmpl.html", data)
 }
 
 func (app *application) userLogInPost(w http.ResponseWriter, r *http.Request) {
 	/* parses the form and checks the database */
-	return
+	var form userLoginForm
+
+	err := app.decodePostForm(r, &form)
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Check for minimum password and email requirements
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRx), "email", "This field must be a valid email address")
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl.html", data)
+		return
+	}
+
+	// If the fields are well formatted, try to authenticate the user
+	id, err := app.users.Authenticate(form.Email, form.Password)
+
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or password is incorrect")
+
+			data := app.newTemplateData(r)
+			data.Form = form
+			app.render(w, r, http.StatusUnprocessableEntity, "login.tmpl.html", data)
+		
+		} else {
+			app.serverError(w, r, err)
+		}
+
+		return
+	}
+
+	// Renew the session id since the user privilege level changed
+	err = app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, r , err)
+		return
+	}
+
+	// And add the new id to the user's session
+	app.sessionManager.Put(r.Context(), "authenticatedUserId", id)
+
+	// Finally, redirect the user to the snippet creation page
+	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
+
 }
+
+
+
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
@@ -159,6 +208,26 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 	app.render(w, r, http.StatusOK, "create.tmpl.html", data)
 	
+}
+
+func (app *application) userLogOut(w http.ResponseWriter, r *http.Request) {
+	// Renew the session ID first
+	err := app.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+
+	// We only have to remove the user's authenticatedUserId header
+	app.sessionManager.Remove(r.Context(), "authenticatedUserId")
+
+	// Notify them through a flash message
+	app.sessionManager.Put(r.Context(), "flash", "You've been logged out sucessfully")
+
+	// And redirect them to the landing page
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+
 }
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {

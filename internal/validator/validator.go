@@ -8,17 +8,24 @@ import (
 )
 
 type Validator struct {
-	FieldErrors map[string]string
+	NonFieldErrors 	[]string
+	FieldErrors 	map[string]string
 }
 
 var EmailRx = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 /*	Valid returns True if there are no errors registered	*/
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0
+	return 	len(v.FieldErrors) 	  == 0 &&
+			len(v.NonFieldErrors) == 0
 }
 
+/*	AddNonFieldError appends the provided error message to the nonFieldErrors slice	*/
+func (v *Validator) AddNonFieldError(msg string) {
+	v.NonFieldErrors = append(v.NonFieldErrors, msg)
+}
 
+/*	AddFieldError inserts a new key:msg pair into the fieldErrors map	*/
 func (v *Validator) AddFieldError(key, msg string) {
 
 	// Initialize the map if it has not been done yet
