@@ -27,6 +27,8 @@ func (app *application) routes() http.Handler {
 	mux.Handle("POST /user/signup", 	 dynamic.ThenFunc(app.userSignupPost))
 	mux.Handle("GET /user/login", 		 dynamic.ThenFunc(app.userLogIn))
 	mux.Handle("POST /user/login", 		 dynamic.ThenFunc(app.userLogInPost))
+	mux.Handle("POST /user/logout",		 dynamic.ThenFunc(app.userLogOutPost))
+
 
 
 	return standard.Then(mux)

@@ -195,22 +195,7 @@ func (app *application) userLogInPost(w http.ResponseWriter, r *http.Request) {
 
 }
 
-
-
-
-func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
-
-	/* 	We must pass an initialized templateData with a non-nil Form in order to have
-	the template correctly render the first time. We set a default 365 expire time	*/
-
-	data := app.newTemplateData(r)
-	data.Form = snippetCreateForm{ Expires: 365, }
-
-	app.render(w, r, http.StatusOK, "create.tmpl.html", data)
-	
-}
-
-func (app *application) userLogOut(w http.ResponseWriter, r *http.Request) {
+func (app *application) userLogOutPost(w http.ResponseWriter, r *http.Request) {
 	// Renew the session ID first
 	err := app.sessionManager.RenewToken(r.Context())
 	if err != nil {
@@ -229,6 +214,20 @@ func (app *application) userLogOut(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
 }
+
+
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
+
+	/* 	We must pass an initialized templateData with a non-nil Form in order to have
+	the template correctly render the first time. We set a default 365 expire time	*/
+
+	data := app.newTemplateData(r)
+	data.Form = snippetCreateForm{ Expires: 365, }
+
+	app.render(w, r, http.StatusOK, "create.tmpl.html", data)
+	
+}
+
 
 func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
 	// The decode method fills the form fields with their corresponding values from the HTML form
