@@ -1,0 +1,76 @@
+package models
+
+import (
+	"database/sql"
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/go-sql-driver/mysql"
+	"golang.org/x/crypto/bcrypt"
+)
+
+type Users struct {
+	ID 				int
+	Name 			string
+	Email 			string 
+	HashedPassword 	[]byte
+	Created			time.Time
+}
+
+type UserModel struct {
+	DB 					*sql.DB
+	InsertStmt 			*sql.Stmt
+	AuthenticateStmt 	*sql.Stmt
+	ExistsStmt 			*sql.Stmt
+}
+
+func NewUserModel(db *sql.DB) (*UserModel, error) {
+	insertStmt, err :=
+		db.Prepare(`INSERT INTO users (name, email, hashed_password, created)
+			 		VALUES (?, ?, ?, UTC_TIMESTAMP())`)
+	if err != nil { return nil, err }
+
+	model := &UserModel{ DB: db,
+						 InsertStmt: insertStmt, }
+
+	return model, nil
+}
+
+/*	Insert creates a new record within the 'users' table	*/
+func (m *UserModel) Insert(name, email, password string) (int, error) {
+
+	hashedPass, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil { return 0, err }
+	
+	result, err := m.InsertStmt.Exec(name, email, hashedPass)
+
+	// If there is an error, we can check what kind of SQL error it is
+	if err != nil { 
+	
+		var mySQLError *mysql.MySQLError
+		if errors.As(err, &mySQLError) {
+			if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "users_uc_email") {
+				return 0, ErrDuplicateEmail
+			}
+		}
+
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil { return 0, err }
+
+	return int(id), nil
+}
+/*	Authenticate verifies whether a users with the given email and password exists.
+	If it does, return its ID.	*/
+func (m *UserModel) Authenticate(email, password string) (int, error) {
+	return 0, nil
+	}
+
+
+/*	Exists checks whether a user with a given id exists in the database	*/
+func (m *UserModel) Exists(id int) (bool, error) {
+	return false, nil
+}

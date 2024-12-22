@@ -20,6 +20,7 @@ import (
 type application struct {
 	logger 			*slog.Logger
 	snippets 		*models.SnippetModel
+	users 			*models.UserModel
 	templateCache 	templateCache
 	formDecoder		*form.Decoder
 	sessionManager  *scs.SessionManager
@@ -52,6 +53,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create the userModel simialrly
+	userModel, err := models.NewUserModel(db)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 	// Defer the closure of all the prepared statements
 	defer snippetModel.InsertStmt.Close()
 	defer snippetModel.GetStmt.Close()
@@ -76,6 +83,7 @@ func main() {
 	app := &application{
 		logger:	  		logger,
 		snippets: 		snippetModel,
+		users:			userModel,
 		templateCache: 	templateCache,
 		formDecoder: 	formDecoder,
 		sessionManager: sessionManager,
