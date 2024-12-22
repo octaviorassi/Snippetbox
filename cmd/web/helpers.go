@@ -10,6 +10,12 @@ import (
 	"github.com/go-playground/form/v4"
 )
 
+/*	isAuthenticated returns true if the given request has an authenticatedUserId header,
+	otherwise returns false	*/
+func (app *application) isAuthenticated(r *http.Request) bool {
+	return app.sessionManager.Exists(r.Context(), "authenticatedUserId")
+}
+
 func (app *application) decodePostForm(r *http.Request, dst any) error {
 	// Parse the form
 	err := r.ParseForm()

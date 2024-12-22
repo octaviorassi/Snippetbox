@@ -11,11 +11,12 @@ import (
 
 
 type templateData struct {
-	Snippet	   	models.Snippet
-	Snippets 	[]models.Snippet
-	CurrentYear int
-	Form 		any
-	Flash		string
+	Snippet	   		models.Snippet
+	Snippets 		[]models.Snippet
+	CurrentYear 	int
+	Form 			any
+	Flash			string
+	IsAuthenticated bool
 }
 
 type templateCache = map[string]*template.Template
@@ -24,8 +25,9 @@ type templateCache = map[string]*template.Template
 	to the current year and Flash set to the request's flash value, if it exists	*/
 func (app *application) newTemplateData(r *http.Request) templateData {
 	return	templateData{
-				CurrentYear: time.Now().Year(),
-				Flash:		  app.sessionManager.PopString(r.Context(), "flash"),
+				CurrentYear: 	 time.Now().Year(),
+				Flash:		  	 app.sessionManager.PopString(r.Context(), "flash"),
+				IsAuthenticated: app.isAuthenticated(r),
 			}
 }
 

@@ -24,6 +24,23 @@ const (
 	Go						   = "Go"
 )
 
+func (app *application) requireAuthentication(next http.Handler) http.Handler {
+
+	return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				// If the user is not authenticated, then redirect them to login
+				if !app.isAuthenticated(r) {
+					http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+					return
+				}
+
+				// If they are, for security reasons set caching to false
+				w.Header().Add("Cache-Control", "no-store")
+
+				// And continue with the next handler
+				next.ServeHTTP(w, r)
+			})
+}
 
 func commonHeaders(next http.Handler) http.Handler {
     return http.HandlerFunc(

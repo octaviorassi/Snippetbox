@@ -18,18 +18,20 @@ func (app *application) routes() http.Handler {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))
 
-	// Apply 'dynamic' to all non-static routes
+	// Unprotected routes, only apply dynamic
 	mux.Handle("GET /{$}", 				 dynamic.ThenFunc(app.home))
-	mux.Handle("GET /snippet/view/{id}", dynamic.ThenFunc(app.snippetView))
-	mux.Handle("GET /snippet/create", 	 dynamic.ThenFunc(app.snippetCreate))
-	mux.Handle("POST /snippet/create", 	 dynamic.ThenFunc(app.snippetCreatePost))
 	mux.Handle("GET /user/signup", 		 dynamic.ThenFunc(app.userSignup))
 	mux.Handle("POST /user/signup", 	 dynamic.ThenFunc(app.userSignupPost))
 	mux.Handle("GET /user/login", 		 dynamic.ThenFunc(app.userLogIn))
 	mux.Handle("POST /user/login", 		 dynamic.ThenFunc(app.userLogInPost))
-	mux.Handle("POST /user/logout",		 dynamic.ThenFunc(app.userLogOutPost))
-
-
-
+	mux.Handle("GET /snippet/view/{id}", dynamic.ThenFunc(app.snippetView))
+	
+	// Protected routes, apply dynamic & requireAuthentication
+	protected := dynamic.Append(app.requireAuthentication)
+	
+	mux.Handle("POST /snippet/create", 	 protected.ThenFunc(app.snippetCreatePost))
+	mux.Handle("GET /snippet/create", 	 protected.ThenFunc(app.snippetCreate))
+	mux.Handle("POST /user/logout",		 protected.ThenFunc(app.userLogOutPost))
+	
 	return standard.Then(mux)
 }
