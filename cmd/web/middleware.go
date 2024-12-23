@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/justinas/nosurf"
 )
 
 const (
@@ -24,8 +27,51 @@ const (
 	Go						   = "Go"
 )
 
-func (app *application) requireAuthentication(next http.Handler) http.Handler {
 
+func (app *application) authenticate(next http.Handler) http.Handler {
+
+	return http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				// If there is no id to begin with, simply continue with the next handler
+				id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+				if id == 0 {
+					next.ServeHTTP(w, r)
+					return
+				}
+
+				// Otherwise, check if that id actually exists in the database
+				exists, err := app.users.Exists(id)
+				if err != nil {
+					app.serverError(w, r, err)
+					return
+				}
+
+				// If the id belongs to a user, add that to the context and continue with next
+				if exists {
+					ctx := context.WithValue(r.Context(), isAuthenticatedContextKey, true)
+					r = r.WithContext(ctx)
+				}
+
+				// Otherwise, ignore it and simply continue
+				next.ServeHTTP(w, r)
+			})
+}
+
+/*	noSurf includes a customized CSRF cookie to the given handler to prevent CSRF attacks	*/
+func noSurf(next http.Handler) http.Handler {
+	csrfHandler := nosurf.New(next)
+	csrfHandler.SetBaseCookie(http.Cookie{
+		HttpOnly: true,
+		Path: "/",
+		Secure: true,
+	})
+
+	return csrfHandler
+}
+
+/*	requireAuthentication adds an authentication check to the given handler. If it passes, the
+	next handler executes. Otherwise, the user is redirected to the login page instead.	*/
+func (app *application) requireAuthentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				// If the user is not authenticated, then redirect them to login
@@ -42,6 +88,7 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 			})
 }
 
+/*	commonHeaders adds several basic headers to the given handler, including security headers.	*/
 func commonHeaders(next http.Handler) http.Handler {
     return http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -56,6 +103,7 @@ func commonHeaders(next http.Handler) http.Handler {
 			})
 }
 
+/*	logRequest modifies the given handler to make it log the request they receive	*/
 func (app *application) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +116,8 @@ func (app *application) logRequest(next http.Handler) http.Handler {
 			})
 }
 
+/*	panicRecover modifies the handler given to close the connection and log the error in
+	case of a panic() call	*/
 func (app *application) panicRecover(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {

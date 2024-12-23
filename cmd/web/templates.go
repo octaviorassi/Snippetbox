@@ -6,6 +6,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/justinas/nosurf"
 	"snippetbox.octaviorassi.net/internal/models"
 )
 
@@ -17,6 +18,7 @@ type templateData struct {
 	Form 			any
 	Flash			string
 	IsAuthenticated bool
+	CSRFToken		string
 }
 
 type templateCache = map[string]*template.Template
@@ -28,6 +30,7 @@ func (app *application) newTemplateData(r *http.Request) templateData {
 				CurrentYear: 	 time.Now().Year(),
 				Flash:		  	 app.sessionManager.PopString(r.Context(), "flash"),
 				IsAuthenticated: app.isAuthenticated(r),
+				CSRFToken: 		 nosurf.Token(r),	
 			}
 }
 

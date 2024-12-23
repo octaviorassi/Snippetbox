@@ -13,7 +13,7 @@ func (app *application) routes() http.Handler {
 	standard := alice.New(app.panicRecover, app.logRequest, commonHeaders)
 	
 	// And a chain of middleware standard for all dynamic requests, i.e. not those fetching on static
-	dynamic := alice.New(app.sessionManager.LoadAndSave)
+	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("GET /static/", http.StripPrefix("/static", fileServer))

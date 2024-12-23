@@ -31,8 +31,13 @@ func NewUserModel(db *sql.DB) (*UserModel, error) {
 			 		VALUES (?, ?, ?, UTC_TIMESTAMP())`)
 	if err != nil { return nil, err }
 
+	existsStmt, err :=
+		db.Prepare("SELECT EXISTS(SELECT true FROM users WHERE id = ?)")
+	if err != nil { return nil, err }
+
 	model := &UserModel{ DB: db,
-						 InsertStmt: insertStmt, }
+						 InsertStmt: insertStmt,
+						 ExistsStmt: existsStmt, }
 
 	return model, nil
 }
@@ -102,5 +107,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 
 /*	Exists checks whether a user with a given id exists in the database	*/
 func (m *UserModel) Exists(id int) (bool, error) {
-	return false, nil
+	var exists bool
+	err := m.ExistsStmt.QueryRow(id).Scan(&exists)
+	return exists, err
 }
